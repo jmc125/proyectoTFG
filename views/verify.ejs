@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificar Certificado</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>Verificar Certificado</h1>
+    <form action="/verify" method="POST">
+        <input type="text" name="certificateId" placeholder="ID del Certificado" required>
+        <button type="submit">Verificar</button>
+    </form>
+
+    <% if (result !== null) { %>
+        <% if (result) { %>
+            <p>Certificado encontrado: <strong><%= result.data.studentName %></strong> - Curso: <strong><%= result.data.courseName %></strong></p>
+            <p>Hash: <%= result.hash %></p>
+            <p>Validado por: <%= result.validator %></p>
+        <% } else { %>
+            <p>Certificado no encontrado.</p>
+        <% } %>
+    <% } %>
+
+    <a href="/">Volver al inicio</a>
+</body>
+</html>

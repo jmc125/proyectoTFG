@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Añadir Certificado</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>Añadir Certificado a la Blockchain</h1>
+    <form action="/add-certificate" method="POST">
+        <input type="text" name="certificateId" placeholder="ID del Certificado" required>
+        <input type="text" name="studentName" placeholder="Nombre del Estudiante" required>
+        <input type="text" name="courseName" placeholder="Nombre del Curso" required>
+        <button type="submit">Añadir</button>
+    </form>
+
+    <h2>Blockchain Actual</h2>
+    <ul>
+        <% blockchain.forEach(block => { %>
+            <li>
+                <strong>Certificado:</strong> <%= block.data.certificateId %> | 
+                <strong>Estudiante:</strong> <%= block.data.studentName %> | 
+                <strong>Curso:</strong> <%= block.data.courseName %> | 
+                <strong>Hash:</strong> <%= block.hash %> | 
+                <strong>Validador:</strong> <%= block.validator %>
+            </li>
+        <% }) %>
+    </ul>
+
+    <a href="/verify">Verificar Certificado</a>
+</body>
+</html>

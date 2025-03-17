@@ -22,8 +22,8 @@ class Blockchain {
     isValidBlock(newBlock) {
         const lastBlock = this.getLastBlock();
     
-        // Correct index
-        if (newBlock.index !== lastBlock.index + 1) {
+        // Correct height
+        if (newBlock.height !== lastBlock.height + 1) {
             return false;
         }
     
@@ -45,9 +45,9 @@ class Blockchain {
         return true;
     }
     
+    // La validación depende más de la elección del validador que de resolver puzzles como en PoW
     isValidHash(hash) {
-        const prefix = '0'.repeat(this.difficulty);
-        return hash.startsWith(prefix);
+        return typeof hash === 'string' && hash.length > 0;
     }
 
 }
