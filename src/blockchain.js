@@ -4,7 +4,7 @@ class Blockchain {
     constructor() {
         this.chain = [Block.genesis];
         this.validators = new Set();
-        this.difficulty = 2; // PoS difficulty
+        this.difficulty = 2; // Dificultad en PoS
     }
 
     getLastBlock() {
@@ -22,22 +22,22 @@ class Blockchain {
     isValidBlock(newBlock) {
         const lastBlock = this.getLastBlock();
     
-        // Correct height
+        // Altura del bloque correcta
         if (newBlock.height !== lastBlock.height + 1) {
             return false;
         }
     
-        // Correct previous hash
+        // Hash previo correcto
         if (newBlock.previousHash !== lastBlock.hash) {
             return false;
         }
     
-        // Valid hash
+        // Hash válido
         if (!this.isValidHash(newBlock.hash)) {
             return false;
         }
     
-        // Validator is a valid participant
+        // Se comprueba que el validador es un participante
         if (!this.validators.has(newBlock.validator)) {
             return false;
         }
@@ -45,7 +45,7 @@ class Blockchain {
         return true;
     }
     
-    // La validación depende más de la elección del validador que de resolver puzzles como en PoW
+    // La validación depende más de la elección del validador que de la resolución de puzzles como en PoW
     isValidHash(hash) {
         return typeof hash === 'string' && hash.length > 0;
     }

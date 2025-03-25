@@ -22,11 +22,14 @@
                 <strong>Estudiante:</strong> <%= block.data.studentName %> | 
                 <strong>Curso:</strong> <%= block.data.courseName %> | 
                 <strong>Hash:</strong> <%= block.hash %> | 
-                <strong>Validador:</strong> <%= block.validator %>
+                <strong>Validador:</strong> <%= block.validator %><br>
+                <strong>Clave Pública:</strong>
+                <pre><%= block.data.publicKey %></pre>
             </li>
         <% }) %>
     </ul>
 
-    <a href="/verify">Verificar Certificado</a>
+    <a href="/verify">Verificar Certificado</a> |
+    <a href="/validators">Ver Validadores</a>
 </body>
 </html>

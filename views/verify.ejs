@@ -12,13 +12,23 @@
         <button type="submit">Verificar</button>
     </form>
 
-    <% if (result !== null) { %>
+    <% if (searchCompleted) { %>
         <% if (result) { %>
-            <p>Certificado encontrado: <strong><%= result.data.studentName %></strong> - Curso: <strong><%= result.data.courseName %></strong></p>
-            <p>Hash: <%= result.hash %></p>
-            <p>Validado por: <%= result.validator %></p>
+            <h2>Certificado encontrado</h2>
+            <ul>
+                <li><strong>Estudiante:</strong> <%= result.data.studentName %></li>
+                <li><strong>Curso:</strong> <%= result.data.courseName %></li>
+                <li><strong>Hash del Bloque:</strong> <%= result.hash %></li>
+                <li><strong>Validador:</strong> <%= result.validator %></li>
+                <li><strong>Clave Pública:</strong><pre><%= result.data.publicKey %></pre></li>
+            </ul>
+            <% if (validSignature) { %>
+                <p style="color:green;"><strong>✔ Firma digital válida (RSA verificada)</strong></p>
+            <% } else { %>
+                <p style="color:red;"><strong>✘ Firma digital inválida o corrupta</strong></p>
+            <% } %>
         <% } else { %>
-            <p>Certificado no encontrado.</p>
+            <h2 style="color: red;">Certificado no encontrado</h2>
         <% } %>
     <% } %>
 
