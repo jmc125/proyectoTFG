@@ -8,7 +8,6 @@
 <body>
     <h1>Añadir Certificado a la Blockchain</h1>
     <form action="/add-certificate" method="POST">
-        <input type="text" name="certificateId" placeholder="ID del Certificado" required>
         <input type="text" name="studentName" placeholder="Nombre del Estudiante" required>
         <input type="text" name="courseName" placeholder="Nombre del Curso" required>
         <button type="submit">Añadir</button>
@@ -18,11 +17,21 @@
     <ul>
         <% blockchain.forEach(block => { %>
             <li>
-                <strong>Certificado:</strong> <%= block.data.certificateId %> | 
+                <strong>Certificado:</strong> <%= block.height %> | 
                 <strong>Estudiante:</strong> <%= block.data.studentName %> | 
                 <strong>Curso:</strong> <%= block.data.courseName %> | 
+                <strong>PreviousHash:</strong> <%= block.previousHash %> |  
                 <strong>Hash:</strong> <%= block.hash %> | 
                 <strong>Validador:</strong> <%= block.validator %><br>
+                <strong>Tiempo:</strong> <%= new Date(block.time).toLocaleString('es-ES', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit', 
+                    hour12: false 
+                }).replace(',', '') %> <br>
                 <strong>Clave Pública:</strong>
                 <pre><%= block.data.publicKey %></pre>
             </li>

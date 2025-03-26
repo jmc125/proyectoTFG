@@ -6,6 +6,8 @@ const crypto = require('crypto');
 const Blockchain = require("./src/blockchain")
 const Block = require("./src/block")
 
+const fetch = require('node-fetch');
+
 const app = express();
 const port = 3000;
 
@@ -52,13 +54,30 @@ app.get('/', (req, res) => {
     res.render('index', { blockchain: blockchain.chain });
 });
 
-app.post('/add-certificate', (req, res) => {
-    const { certificateId, studentName, courseName } = req.body;
-    const data = { certificateId, studentName, courseName };
+app.post('/add-certificate', async (req, res) => {
+    const { studentName, courseName } = req.body;
+
+    // Hay que asegurarse de que la blockchain tiene al menos un bloque
+    if (blockchain.chain.length === 0) {
+        blockchain.chain.push(Block.genesis);
+    }
 
     const lastBlock = blockchain.getLastBlock();
-    const height = lastBlock.height + 1;
-    const time = Date.now();
+    const height = lastBlock.height + 1; // La altura es el Id del bloque
+
+    const data = { certificateId: height, studentName, courseName };
+
+    // Se obtiene la hora desde un servidor de tiempo
+    let time;
+    try {
+        const response = await fetch('http://worldtimeapi.org/api/timezone/Etc/UTC');
+        const timeData = await response.json();
+        time = new Date(timeData.utc_datetime).getTime(); // Convertir a timestamp
+    } catch (error) {
+        console.error('Error obteniendo el tiempo:', error);
+        time = Date.now(); //  Si hay un error al obtener la hora, se usa Date.now() como respaldo
+    }
+    
     const previousHash = lastBlock.hash;
 
     const validator = selectValidator();
@@ -91,8 +110,8 @@ app.get('/verify', (req, res) => {
 });
 
 app.post('/verify', (req, res) => {
-    const { certificateId } = req.body;
-    const found = blockchain.chain.find(block => block.data.certificateId === certificateId);
+    const blockHeight = parseInt(req.body.certificateId); // Id a número
+    const found = blockchain.chain.find(block => block.height === blockHeight);
 
     if (found) {
         const { signature, publicKey, ...certData } = found.data;
