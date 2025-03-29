@@ -1,4 +1,6 @@
 const express = require("express");
+const session = require("express-session");
+const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
 const path = require('path');
 const fs = require('fs');
@@ -6,17 +8,22 @@ const crypto = require('crypto');
 const Blockchain = require("./src/blockchain")
 const Block = require("./src/block")
 
-const fetch = require('node-fetch');
-
 const app = express();
 const port = 3000;
 
 let blockchain = new Blockchain();
+const users = {};
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended : true }));
 app.use(express.static("public"));
 app.set("view engine", "ejs");
+
+app.use(session({
+    secret: 'secreto_super_seguro',
+    resave: false,
+    saveUninitialized: true
+}));
 
 // Se crea una carpeta llamada keys en caso de que no exista
 const keysDir = path.join(__dirname, 'keys');
@@ -24,9 +31,13 @@ if (!fs.existsSync(keysDir)) {
     fs.mkdirSync(keysDir);
 }
 
-// Claves RSA y registro de validadores
+const validatorsPoS = ['Estudiante_1', 'Estudiante_2', 'Estudiante_3'];
+const validatorsPoA = ['Universidad_1', 'Universidad_2', 'Universidad_3']; 
+let poaIndex = 0;
 const validators = {};
-['Validator_1', 'Validator_2', 'Validator_3'].forEach(validator => {
+
+// Claves RSA y registro de validadores
+[...validatorsPoS, ...validatorsPoA].forEach(validator => {
     const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
         modulusLength: 2048,
         publicKeyEncoding: { type: 'spki', format: 'pem' },
@@ -41,20 +52,62 @@ const validators = {};
     blockchain.validators.add(validator);
 });
 
-// Algoritmo de consenso PoS
-function selectValidator() {
-    // Lógica de selección de validador simulada
-    const validators = Array.from(blockchain.validators);
-    const randomIndex = Math.floor(Math.random() * validators.length);
-    return validators[randomIndex];
+// // Selección de validador en PoS
+function selectValidatorPoS() {
+    const posValidators = Array.from(validatorsPoS);
+    return posValidators[Math.floor(Math.random() * posValidators.length)];
 }
 
-// Rutas
+// Función de selección de validador en PoA con rotación automática
+function selectValidatorPoA() {
+    const validator = validatorsPoA[poaIndex]; // Obtener validador actual
+    poaIndex = (poaIndex + 1) % validatorsPoA.length; // Rotar validador
+    return validator;
+}
+// Rutas de autenticación
+app.get('/register', (req, res) => res.render('register'));
+app.get('/login', (req, res) => res.render('login'));
+
+app.post('/register', async (req, res) => {
+    const { username, password, role } = req.body;
+
+    if (users[username]) {
+        return res.send("Usuario ya registrado.");
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users[username] = { password: hashedPassword, role };
+    res.redirect('/login');
+});
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = users[username];
+    
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        return res.send("Usuario o contraseña incorrectos.");
+    }
+
+    req.session.user = { username, role: user.role };
+    res.redirect('/');
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => res.redirect('/login'));
+});
+
+// Ruta de la página principal
 app.get('/', (req, res) => {
-    res.render('index', { blockchain: blockchain.chain });
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    res.render('index', { blockchain: blockchain.chain, user: req.session.user });
 });
 
 app.post('/add-certificate', async (req, res) => {
+    if (!req.session.user){
+         return res.redirect('/login');
+    } 
+
     const { studentName, courseName } = req.body;
 
     // Hay que asegurarse de que la blockchain tiene al menos un bloque
@@ -64,28 +117,36 @@ app.post('/add-certificate', async (req, res) => {
 
     const lastBlock = blockchain.getLastBlock();
     const height = lastBlock.height + 1; // La altura es el Id del bloque
+    const previousHash = lastBlock.hash;
+
+    let validator_selection;
+
+    if (req.session.user.role === "student") {
+        validator_selection = selectValidatorPoS();
+    } else if (req.session.user.role === "university") {
+        validator_selection = selectValidatorPoA();
+    } else {
+        return res.send("Rol no autorizado.");
+    }
+
+    const publicKey = validators[validator_selection].publicKey;
+
+    // Se lee la clave privada desde la carpeta
+    const privateKeyPath = path.join(keysDir, `${validator_selection}_private.pem`);
+    const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
 
     const data = { certificateId: height, studentName, courseName };
 
     // Se obtiene la hora desde un servidor de tiempo
     let time;
     try {
-        const response = await fetch('http://worldtimeapi.org/api/timezone/Etc/UTC');
+        const response = await fetch('http://worldclockapi.com/api/json/utc/now');
         const timeData = await response.json();
-        time = new Date(timeData.utc_datetime).getTime(); // Convertir a timestamp
+        time = new Date(timeData.currentDateTime).getTime();
     } catch (error) {
         console.error('Error obteniendo el tiempo:', error);
-        time = Date.now(); //  Si hay un error al obtener la hora, se usa Date.now() como respaldo
+        time = Date.now(); // Fallback al tiempo local
     }
-    
-    const previousHash = lastBlock.hash;
-
-    const validator = selectValidator();
-    const publicKey = validators[validator].publicKey;
-
-    // Se lee la clave privada desde la carpeta
-    const privateKeyPath = path.join(keysDir, `${validator}_private.pem`);
-    const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
 
     // Se firma la transacción (certificado)
     const sign = crypto.createSign('SHA256');
@@ -94,9 +155,9 @@ app.post('/add-certificate', async (req, res) => {
     const signature = sign.sign(privateKey, 'base64');
 
     const tempBlock = new Block();
-    const hash = tempBlock.calculateHash(height, previousHash, time, data, validator);
+    const hash = tempBlock.calculateHash(height, previousHash, time, data, validator_selection);
 
-    const newBlock = new Block(height, previousHash, time, { ...data, signature, publicKey }, hash, validator);
+    const newBlock = new Block(height, previousHash, time, { ...data, signature, publicKey }, hash, validator_selection);
 
     if (blockchain.addBlock(newBlock)) {
         res.redirect('/');
