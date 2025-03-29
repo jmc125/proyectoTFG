@@ -76,11 +76,11 @@ function selectValidatorPoS(username) {
 function selectValidatorPoA(username) {
     const poaValidators = getAvailableValidators("university", username);
     if (poaValidators.length === 0) return null;
-    
     const validator = poaValidators[poaIndex]; // Obtener validador actual
     poaIndex = (poaIndex + 1) % poaValidators.length; // Rotar validador
     return validator;
 }
+
 // Rutas de autenticación
 app.get('/register', (req, res) => res.render('register'));
 app.get('/login', (req, res) => res.render('login'));
