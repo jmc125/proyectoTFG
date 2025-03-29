@@ -13,6 +13,8 @@ const port = 3000;
 
 let blockchain = new Blockchain();
 const users = {};
+const validators = {};
+
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended : true }));
@@ -31,52 +33,66 @@ if (!fs.existsSync(keysDir)) {
     fs.mkdirSync(keysDir);
 }
 
-const validatorsPoS = ['Estudiante_1', 'Estudiante_2', 'Estudiante_3'];
-const validatorsPoA = ['Universidad_1', 'Universidad_2', 'Universidad_3']; 
 let poaIndex = 0;
-const validators = {};
 
-// Claves RSA y registro de validadores
-[...validatorsPoS, ...validatorsPoA].forEach(validator => {
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+// Registro de usuarios y generación de claves RSA
+async function registerUser(username, password, role) {
+    if (users[username]) return false;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users[username] = { password: hashedPassword, role };
+
+    const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
         modulusLength: 2048,
-        publicKeyEncoding: { type: 'spki', format: 'pem' },
-        privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+        publicKeyEncoding: { type: "spki", format: "pem" },
+        privateKeyEncoding: { type: "pkcs8", format: "pem" },
     });
 
     // Guardado de clave
-    fs.writeFileSync(path.join(keysDir, `${validator}_private.pem`), privateKey);
+    fs.writeFileSync(path.join(keysDir, `${username}_private.pem`), privateKey);
 
     // Se almacena únicamente la clave pública en memoria
-    validators[validator] = { publicKey };
-    blockchain.validators.add(validator);
-});
+    validators[username] = { publicKey };
 
-// // Selección de validador en PoS
-function selectValidatorPoS() {
-    const posValidators = Array.from(validatorsPoS);
+    blockchain.validators.add(username);
+
+    return true;
+}
+
+// Obtener validadores excluyendo al usuario actual
+function getAvailableValidators(role, username) {
+    return Object.keys(users)
+        .filter(user => users[user].role === role && user !== username);
+}
+
+// Selección de validador en PoS
+function selectValidatorPoS(username) {
+    const posValidators = getAvailableValidators("student", username);
+    if (posValidators.length === 0) return null;
     return posValidators[Math.floor(Math.random() * posValidators.length)];
 }
 
 // Función de selección de validador en PoA con rotación automática
-function selectValidatorPoA() {
-    const validator = validatorsPoA[poaIndex]; // Obtener validador actual
-    poaIndex = (poaIndex + 1) % validatorsPoA.length; // Rotar validador
+function selectValidatorPoA(username) {
+    const poaValidators = getAvailableValidators("university", username);
+    if (poaValidators.length === 0) return null;
+    
+    const validator = poaValidators[poaIndex]; // Obtener validador actual
+    poaIndex = (poaIndex + 1) % poaValidators.length; // Rotar validador
     return validator;
 }
 // Rutas de autenticación
 app.get('/register', (req, res) => res.render('register'));
 app.get('/login', (req, res) => res.render('login'));
 
-app.post('/register', async (req, res) => {
+app.post("/register", async (req, res) => {
     const { username, password, role } = req.body;
 
-    if (users[username]) {
-        return res.send("Usuario ya registrado.");
+    if (await registerUser(username, password, role)) {
+        res.redirect("/login");
+    } else {
+        res.send("Usuario ya registrado.");
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    users[username] = { password: hashedPassword, role };
-    res.redirect('/login');
 });
 
 app.post('/login', async (req, res) => {
@@ -109,10 +125,11 @@ app.post('/add-certificate', async (req, res) => {
     } 
 
     const { studentName, courseName } = req.body;
+    const { username, role } = req.session.user;
+    const availableValidators = getAvailableValidators(role, username);
 
-    // Hay que asegurarse de que la blockchain tiene al menos un bloque
-    if (blockchain.chain.length === 0) {
-        blockchain.chain.push(Block.genesis);
+    if (availableValidators.length < 1) {
+        return res.send("Error: No hay suficientes validadores disponibles.");
     }
 
     const lastBlock = blockchain.getLastBlock();
@@ -122,17 +139,30 @@ app.post('/add-certificate', async (req, res) => {
     let validator_selection;
 
     if (req.session.user.role === "student") {
-        validator_selection = selectValidatorPoS();
+        validator_selection = selectValidatorPoS(username);
     } else if (req.session.user.role === "university") {
-        validator_selection = selectValidatorPoA();
+        validator_selection = selectValidatorPoA(username);
     } else {
         return res.send("Rol no autorizado.");
+    }
+
+    if (!validator_selection) {
+        return res.send("Error: No hay suficientes validadores disponibles.");
+    }
+
+    if (!validators[validator_selection]) {
+        return res.send("Error: El validador seleccionado no tiene clave pública registrada.");
     }
 
     const publicKey = validators[validator_selection].publicKey;
 
     // Se lee la clave privada desde la carpeta
     const privateKeyPath = path.join(keysDir, `${validator_selection}_private.pem`);
+
+    if (!fs.existsSync(privateKeyPath)) {
+        return res.send("Error: No se encontró la clave privada del validador.");
+    }
+
     const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
 
     const data = { certificateId: height, studentName, courseName };

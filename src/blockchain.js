@@ -4,7 +4,7 @@ class Blockchain {
     constructor() {
         this.chain = [Block.genesis];
         this.validators = new Set();
-        this.difficulty = 2; // Dificultad en PoS
+        this.difficulty = 2; // Dificultad
     }
 
     getLastBlock() {
