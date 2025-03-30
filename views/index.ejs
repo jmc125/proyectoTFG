@@ -17,20 +17,21 @@
     <ul>
         <% blockchain.forEach(block => { %>
             <li>
-                <strong>Certificado:</strong> <%= block.height %> | 
-                <strong>Estudiante:</strong> <%= block.data.studentName %> | 
-                <strong>Curso:</strong> <%= block.data.courseName %> | 
-                <strong>PreviousHash:</strong> <%= block.previousHash %> |  
-                <strong>Hash:</strong> <%= block.hash %> | 
-                <strong>Validador:</strong> <%= block.validator %><br>
-                <strong>Tiempo:</strong> <%= new Date(block.time).toLocaleString('es-ES', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit', 
-                    hour12: false 
+                <strong>Certificado:</strong> <%= block.height %> |
+                <strong>Estudiante:</strong> <%= block.data.studentName %> |
+                <strong>Curso:</strong> <%= block.data.courseName %> |
+                <strong>PreviousHash:</strong> <%= block.previousHash %> |
+                <strong>Hash:</strong> <%= block.hash %> |
+                <strong>Merkle Root:</strong> <%= block.merkleRoot %><br>
+                <strong>Validador:</strong> <%= block.validator %> |
+                <strong>Tiempo:</strong> <%= new Date(block.time).toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
                 }).replace(',', '') %> <br>
                 <strong>Clave Pública:</strong>
                 <pre><%= block.data.publicKey %></pre>

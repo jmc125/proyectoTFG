@@ -5,8 +5,9 @@ const bodyParser = require("body-parser");
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const Blockchain = require("./src/blockchain")
-const Block = require("./src/block")
+const Blockchain = require("./src/blockchain");
+const Block = require("./src/block");
+const MerkleTree = require("./src/merkle");
 
 const app = express();
 const port = 3000;
@@ -81,6 +82,24 @@ function selectValidatorPoA(username) {
     return validator;
 }
 
+// Función para crear el árbol de merkle usando los archivos de la transacción
+function getMerkleRootFromFiles() {
+    const filesDir = path.join(__dirname, 'files');
+    if (!fs.existsSync(filesDir)) return '';
+
+    const files = fs.readdirSync(filesDir);
+    if (files.length === 0) return '';
+
+    const fileHashes = files.map(file => {
+        const filePath = path.join(filesDir, file);
+        const fileData = fs.readFileSync(filePath);
+        return crypto.createHash('sha256').update(fileData).digest('hex');
+    });
+
+    const merkleTree = new MerkleTree(fileHashes);
+    return merkleTree.root;
+}  
+
 // Rutas de autenticación
 app.get('/register', (req, res) => res.render('register'));
 app.get('/login', (req, res) => res.render('login'));
@@ -126,6 +145,7 @@ app.post('/add-certificate', async (req, res) => {
 
     const { studentName, courseName } = req.body;
     const { username, role } = req.session.user;
+
     const availableValidators = getAvailableValidators(role, username);
 
     if (availableValidators.length < 1) {
@@ -135,6 +155,7 @@ app.post('/add-certificate', async (req, res) => {
     const lastBlock = blockchain.getLastBlock();
     const height = lastBlock.height + 1; // La altura es el Id del bloque
     const previousHash = lastBlock.hash;
+    const merkleRoot = getMerkleRootFromFiles();
 
     let validator_selection;
 
@@ -184,10 +205,9 @@ app.post('/add-certificate', async (req, res) => {
     sign.end();
     const signature = sign.sign(privateKey, 'base64');
 
-    const tempBlock = new Block();
-    const hash = tempBlock.calculateHash(height, previousHash, time, data, validator_selection);
+    const hash = Block.calculateHash(height, previousHash, time, { studentName, courseName }, validator_selection, merkleRoot);
 
-    const newBlock = new Block(height, previousHash, time, { ...data, signature, publicKey }, hash, validator_selection);
+    const newBlock = new Block(height, previousHash, time, { ...data, signature, publicKey }, hash, validator_selection, merkleRoot);
 
     if (blockchain.addBlock(newBlock)) {
         res.redirect('/');
