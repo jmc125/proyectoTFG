@@ -187,9 +187,22 @@ app.post('/add-certificate', async (req, res) => {
 
     const data = { certificateId: height, studentName, courseName };
 
-    const time = Date.now();
+    let time;
 
-    // Se firma la transacción (certificado)
+    try {
+        const response = await fetch('http://worldtimeapi.org/api/timezone/Europe/Madrid'); // Usamos una API externa
+        if (!response.ok) {
+            console.error('Error al obtener el tiempo del servidor externo:', response.status);
+            return res.send('Error al obtener el tiempo del servidor externo.');
+        }
+        const externalTimeData = await response.json();
+        time = new Date(externalTimeData.datetime).getTime(); // Asumiendo que la API devuelve un campo 'datetime'
+    } catch (error) {
+        console.error('Error al comunicarse con la API de tiempo externa:', error);
+        return res.send('Error al obtener el tiempo del servidor externo.');
+    }
+
+    // Se firma la transacción
     const sign = crypto.createSign('SHA256');
     sign.update(JSON.stringify(data));
     sign.end();
