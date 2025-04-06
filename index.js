@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const Blockchain = require("./src/blockchain");
 const Block = require("./src/block");
 const MerkleTree = require("./src/merkle");
+const ntpClient = require('ntp-client'); // Importa la librería NTP
 
 const app = express();
 const port = 3000;
@@ -97,7 +98,7 @@ function getMerkleRootFromFiles() {
 
     const merkleTree = new MerkleTree(fileHashes);
     return merkleTree.root;
-}  
+}
 
 // Rutas de autenticación
 app.get('/register', (req, res) => res.render('register'));
@@ -116,7 +117,7 @@ app.post("/register", async (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     const user = users[username];
-    
+
     if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.send("Usuario o contraseña incorrectos.");
     }
@@ -139,8 +140,8 @@ app.get('/', (req, res) => {
 
 app.post('/add-certificate', async (req, res) => {
     if (!req.session.user){
-         return res.redirect('/login');
-    } 
+        return res.redirect('/login');
+    }
 
     const { studentName, courseName } = req.body;
     const { username, role } = req.session.user;
@@ -188,18 +189,22 @@ app.post('/add-certificate', async (req, res) => {
     const data = { certificateId: height, studentName, courseName };
 
     let time;
-
     try {
-        const response = await fetch('http://worldtimeapi.org/api/timezone/Europe/Madrid'); // Usamos una API externa
-        if (!response.ok) {
-            console.error('Error al obtener el tiempo del servidor externo:', response.status);
-            return res.send('Error al obtener el tiempo del servidor externo.');
-        }
-        const externalTimeData = await response.json();
-        time = new Date(externalTimeData.datetime).getTime(); // Asumiendo que la API devuelve un campo 'datetime'
+        const ntpResult = await new Promise((resolve, reject) => {
+            ntpClient.getNetworkTime("pool.ntp.org", 123, (err, time) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve({ getTime: () => time.getTime(), raw: time }); // Adaptamos el resultado
+            });
+        });
+        time = ntpResult.getTime();
+        console.log('Hora obtenida de NTP:', new Date(time).toISOString());
     } catch (error) {
-        console.error('Error al comunicarse con la API de tiempo externa:', error);
-        return res.send('Error al obtener el tiempo del servidor externo.');
+        console.error('Error obteniendo el tiempo de NTP:', error);
+        time = Date.now(); // Fallback al tiempo local
+        console.warn('Usando la hora del sistema local como respaldo.');
     }
 
     // Se firma la transacción
