@@ -6,16 +6,27 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>Registro</h1>
-    <form action="/register" method="POST">
-        <input type="text" name="username" placeholder="Nombre de usuario" required>
-        <input type="password" name="password" placeholder="Contraseña" required>
-        <select name="role">
-            <option value="student">Estudiante</option>
-            <option value="university">Universidad</option>
-        </select>
-        <button type="submit">Registrarse</button>
-    </form>
-    <a href="/login">Iniciar sesión</a>
+    <header>
+        <h1>Registro</h1>
+    </header>
+
+    <main>
+        <section>
+            <form action="/register" method="POST">
+                <input type="text" name="username" placeholder="Nombre de usuario" required>
+                <input type="password" name="password" placeholder="Contraseña" required>
+                <select name="role" required>
+                    <option value="">Selecciona un rol</option>
+                    <option value="student">Estudiante</option>
+                    <option value="university">Universidad</option>
+                </select>
+                <button type="submit">Registrarse</button>
+            </form>
+        </section>
+
+        <nav>
+            <a href="/login">¿Ya tienes cuenta? Iniciar sesión</a>
+        </nav>
+    </main>
 </body>
 </html>

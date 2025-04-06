@@ -1,20 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Validadores y Claves Públicas</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>Lista de Validadores y sus Claves Públicas</h1>
-    <% validators.forEach(v => { %>
-        <div style="margin-bottom: 20px;">
-            <h3><%= v.name %></h3>
-            <strong>Clave Pública:</strong>
-            <pre><%= v.publicKey %></pre>
-        </div>
-    <% }) %>
+    <header>
+        <h1>Lista de Validadores y sus Claves Públicas</h1>
+    </header>
 
-    <a href="/">Volver al inicio</a>
+    <main>
+        <section>
+            <% validators.forEach(v => { %>
+                <div style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h3><%= v.name %></h3>
+                    <strong>Clave Pública:</strong>
+                    <pre><%= v.publicKey %></pre>
+                </div>
+            <% }) %>
+        </section>
+
+        <nav>
+            <a href="/">Volver al inicio</a>
+        </nav>
+    </main>
 </body>
 </html>

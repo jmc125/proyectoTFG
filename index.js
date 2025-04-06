@@ -16,7 +16,6 @@ let blockchain = new Blockchain();
 const users = {};
 const validators = {};
 
-
 // Middleware
 app.use(bodyParser.urlencoded({ extended : true }));
 app.use(express.static("public"));
@@ -188,16 +187,7 @@ app.post('/add-certificate', async (req, res) => {
 
     const data = { certificateId: height, studentName, courseName };
 
-    // Se obtiene la hora desde un servidor de tiempo
-    let time;
-    try {
-        const response = await fetch('http://worldclockapi.com/api/json/utc/now');
-        const timeData = await response.json();
-        time = new Date(timeData.currentDateTime).getTime();
-    } catch (error) {
-        console.error('Error obteniendo el tiempo:', error);
-        time = Date.now(); // Fallback al tiempo local
-    }
+    const time = Date.now();
 
     // Se firma la transacción (certificado)
     const sign = crypto.createSign('SHA256');

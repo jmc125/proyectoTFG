@@ -6,12 +6,22 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>Iniciar Sesión</h1>
-    <form action="/login" method="POST">
-        <input type="text" name="username" placeholder="Nombre de usuario" required>
-        <input type="password" name="password" placeholder="Contraseña" required>
-        <button type="submit">Iniciar Sesión</button>
-    </form>
-    <a href="/register">Registrarse</a>
+    <header>
+        <h1>Iniciar Sesión</h1>
+    </header>
+
+    <main>
+        <section>
+            <form action="/login" method="POST">
+                <input type="text" name="username" placeholder="Nombre de usuario" required>
+                <input type="password" name="password" placeholder="Contraseña" required>
+                <button type="submit">Iniciar Sesión</button>
+            </form>
+        </section>
+
+        <nav>
+            <a href="/register">¿No tienes cuenta? Registrarse</a>
+        </nav>
+    </main>
 </body>
 </html>
