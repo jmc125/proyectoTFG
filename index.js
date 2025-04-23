@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const Blockchain = require("./src/blockchain");
 const Block = require("./src/block");
 const MerkleTree = require("./src/merkle");
-const ntpClient = require('ntp-client'); // Importa la librería NTP
+const ntpClient = require('ntp-client'); 
 
 const app = express();
 const port = 3000;
@@ -60,7 +60,7 @@ async function registerUser(username, password, role) {
     return true;
 }
 
-// Obtener validadores excluyendo al usuario actual
+// Obtención de validadores excluyendo al usuario actual
 function getAvailableValidators(role, username) {
     return Object.keys(users)
         .filter(user => users[user].role === role && user !== username);
@@ -77,12 +77,12 @@ function selectValidatorPoS(username) {
 function selectValidatorPoA(username) {
     const poaValidators = getAvailableValidators("university", username);
     if (poaValidators.length === 0) return null;
-    const validator = poaValidators[poaIndex]; // Obtener validador actual
-    poaIndex = (poaIndex + 1) % poaValidators.length; // Rotar validador
+    const validator = poaValidators[poaIndex]; // Obtención del validador actual
+    poaIndex = (poaIndex + 1) % poaValidators.length; // Rotación de validador
     return validator;
 }
 
-// Función para crear el árbol de merkle usando los archivos de la transacción
+// Función para crear el árbol de merkle usando archivos creados en la carpeta files
 function getMerkleRootFromFiles() {
     const filesDir = path.join(__dirname, 'files');
     if (!fs.existsSync(filesDir)) return '';
