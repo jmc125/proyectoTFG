@@ -8,7 +8,7 @@
 
 - Backend: Node.js
 - Frontend: EJS
-- Estilos: CSS
+- Styles: CSS
 - Blockchain: Implementation of PoS and PoA
 
 ## Getting Started
@@ -43,7 +43,7 @@ To get a local copy up and running follow these simple example steps.
 
 ## Authors
 
-👤 **Author**
+👤 **Author1**
 
 - GitHub: https://github.com/jmc125
 - LinkedIn: https://www.linkedin.com/in/jaime-martín-clares-812a70347/
