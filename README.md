@@ -46,7 +46,7 @@ To get a local copy up and running follow these simple example steps.
 👤 **Author1**
 
 - GitHub: https://github.com/jmc125
-- LinkedIn: https://www.linkedin.com/in/jaime-martín-clares-812a70347/
+- LinkedIn: https://www.linkedin.com/in/jaime-martín-clares
 
 ## 🤝 Contributing
 
